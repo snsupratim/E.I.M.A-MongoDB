@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>College Knowledge Base</title>
+    <link rel="stylesheet" href="static/styles.css">
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <h1>College Knowledge Base</h1>
+            <p>Ask any questions related to college life, academics, and more.</p>
+        </header>
+
+        <div class="content">
+            <form method="POST" action="/">
+                <div class="form-group">
+                    <label for="query">Ask Your Question:</label>
+                    <input type="text" id="query" name="query" placeholder="Type your question here..."
+                        value="{{ query }}" required>
+                </div>
+                <button type="submit" class="submit-btn">Ask</button>
+            </form>
+
+            {% if response %}
+            <div class="response-box">
+                <h3>Response:</h3>
+                <p>{{ response }}</p>
+            </div>
+            {% endif %}
+        </div>
+
+        <footer>
+            <p>&copy; 2025 College Knowledge Base. All rights reserved.</p>
+        </footer>
+    </div>
+</body>
+
+</html>
