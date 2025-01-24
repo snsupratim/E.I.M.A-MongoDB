@@ -1,15 +1,17 @@
 import streamlit as st
 import google.generativeai as genai
 from pymongo import MongoClient
+import json
 
 # MongoDB Configuration
-client = MongoClient('mongodb://localhost:27017/')
+client = MongoClient("mongodb+srv://nagsupratim8:cmXzynT1ANQMufEe@cluster0.ksv5a.mongodb.net/knowledge_base?retryWrites=true&w=majority&appName=Cluster0")
 db = client['knowledge_base']
 collection = db['responses']
 
 # Configure Google Generative AI
 genai.configure(api_key="AIzaSyDKlEV9cYN378j8emwqpcPpVa3Nc_GCdAo")
 model = genai.GenerativeModel("gemini-1.5-flash")
+
 
 def query_knowledge_base(query):
     """Query MongoDB and generate a response using the model."""
@@ -50,3 +52,21 @@ new_data = st.text_area("New Data Text", height=100)
 if st.button("Add Data") and new_data:
     collection.insert_one({'text': new_data})
     st.success("Data added successfully.")
+
+# JSON Upload Section
+st.markdown("---")
+st.write("**Admin**: Upload a JSON file to bulk add data to the knowledge base.")
+uploaded_file = st.file_uploader("Upload a JSON file", type=["json"])
+
+if uploaded_file:
+    try:
+        # Parse the uploaded JSON file
+        data = json.load(uploaded_file)
+        if isinstance(data, list):
+            # Insert all entries into the collection
+            collection.insert_many(data)
+            st.success(f"{len(data)} records added successfully.")
+        else:
+            st.error("The JSON file must contain an array of objects.")
+    except Exception as e:
+        st.error(f"Failed to process the file: {e}")
