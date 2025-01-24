@@ -3,16 +3,21 @@ from pymongo import MongoClient
 import google.generativeai as genai
 import json
 from bson.objectid import ObjectId
+from dotenv import load_dotenv
+import os
+
+# Load environment variables from .env file
+load_dotenv()
 
 app = Flask(__name__)
 
 # MongoDB Configuration
-client = MongoClient('mongodb+srv://nagsupratim8:cmXzynT1ANQMufEe@cluster0.ksv5a.mongodb.net/knowledge_base?retryWrites=true&w=majority&appName=Cluster0')
+client = MongoClient(os.getenv('MONGO_URI'))
 db = client['knowledge_base']
 collection = db['responses']
 
 # Configure Google Generative AI
-genai.configure(api_key="AIzaSyDKlEV9cYN378j8emwqpcPpVa3Nc_GCdAo")
+genai.configure(api_key=os.getenv('GOOGLE_API_KEY'))
 model = genai.GenerativeModel("gemini-1.5-flash")
 
 # Insert dataset into MongoDB if not already present
@@ -23,9 +28,6 @@ if collection.count_documents({}) == 0:
     print("Dataset inserted into MongoDB.")
 
 def query_knowledge_base(query):
-    """
-    Query MongoDB and generate a response using the Generative AI model.
-    """
     documents = collection.find({})
     knowledge_base = [doc['text'] for doc in documents]
     
@@ -40,9 +42,6 @@ def query_knowledge_base(query):
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
-    """
-    Main route to handle queries and generate responses.
-    """
     response = None
     query = None
 
@@ -54,21 +53,14 @@ def index():
 
 @app.route('/add', methods=['POST'])
 def add_data():
-    """
-    Add new data to the MongoDB knowledge base.
-    """
     data = request.get_json()
     if 'text' in data:
-        # Insert new data into MongoDB
         collection.insert_one({'text': data['text']})
         return jsonify({'message': 'Data added successfully'}), 200
     return jsonify({'error': 'Invalid data format'}), 400
 
 @app.route('/upload-json', methods=['POST'])
 def upload_json():
-    """
-    Upload a JSON file and add its contents to the MongoDB knowledge base.
-    """
     if 'file' not in request.files:
         return jsonify({'error': 'No file provided'}), 400
     file = request.files['file']
@@ -86,18 +78,12 @@ def upload_json():
 
 @app.route('/get-all', methods=['GET'])
 def get_all_data():
-    """
-    Retrieve all data from the MongoDB knowledge base.
-    """
     documents = collection.find({})
     data = [{'id': str(doc['_id']), 'text': doc['text']} for doc in documents]
     return jsonify(data), 200
 
 @app.route('/delete/<id>', methods=['DELETE'])
 def delete_data(id):
-    """
-    Delete a specific record from the MongoDB knowledge base by ID.
-    """
     try:
         result = collection.delete_one({'_id': ObjectId(id)})
         if result.deleted_count > 0:
