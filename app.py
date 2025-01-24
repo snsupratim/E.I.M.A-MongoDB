@@ -2,11 +2,12 @@ from flask import Flask, render_template, request, jsonify
 from pymongo import MongoClient
 import google.generativeai as genai
 import json
+from bson.objectid import ObjectId
 
 app = Flask(__name__)
 
 # MongoDB Configuration
-client = MongoClient('mongodb://localhost:27017/')
+client = MongoClient('mongodb+srv://nagsupratim8:cmXzynT1ANQMufEe@cluster0.ksv5a.mongodb.net/knowledge_base?retryWrites=true&w=majority&appName=Cluster0')
 db = client['knowledge_base']
 collection = db['responses']
 
@@ -63,6 +64,26 @@ def add_data():
         return jsonify({'message': 'Data added successfully'}), 200
     return jsonify({'error': 'Invalid data format'}), 400
 
+@app.route('/upload-json', methods=['POST'])
+def upload_json():
+    """
+    Upload a JSON file and add its contents to the MongoDB knowledge base.
+    """
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file provided'}), 400
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({'error': 'No selected file'}), 400
+
+    try:
+        data = json.load(file)
+        if isinstance(data, list):
+            collection.insert_many(data)
+            return jsonify({'message': f'{len(data)} records added successfully'}), 200
+        return jsonify({'error': 'Invalid JSON format. Must be a list of objects.'}), 400
+    except Exception as e:
+        return jsonify({'error': f'Failed to process file: {str(e)}'}), 400
+
 @app.route('/get-all', methods=['GET'])
 def get_all_data():
     """
@@ -77,7 +98,6 @@ def delete_data(id):
     """
     Delete a specific record from the MongoDB knowledge base by ID.
     """
-    from bson.objectid import ObjectId
     try:
         result = collection.delete_one({'_id': ObjectId(id)})
         if result.deleted_count > 0:
